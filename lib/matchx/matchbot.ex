@@ -7,10 +7,9 @@ defmodule Matchx.Matchbot do
 
   def init(:ok) do
     children = [
-      # TODO: global named processes or start link and stuff?
-      worker(Matchx.Matchbot.Client.Protocol, [:client_protocol]),
-      worker(Matchx.Matchbot.Client.Connection, [:client_connection]),
-      worker(Matchx.Matchbot.Client, [:client])
+      worker(Matchx.Matchbot.Client.Protocol, []),
+      worker(Matchx.Matchbot.Client.Connection, []),
+      worker(Matchx.Matchbot.Client, [])
     ]
 
     supervise(children, strategy: :one_for_one)

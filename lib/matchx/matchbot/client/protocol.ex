@@ -2,31 +2,31 @@ defmodule Matchx.Matchbot.Client.Protocol do
   require Logger
   use GenServer
 
-  @initial_state %{}
+  @name __MODULE__
+  # public API
 
   def start_link(name) do
-    GenServer.start_link(__MODULE__, @initial_state, name: name)
-  end
-
-  def init(state) do
-    {:ok, state}
+    Logger.debug("HERE COMES THE protocol")
+    GenServer.start_link(__MODULE__, [], name: @name)
   end
 
   def decode(msg) do
     Logger.debug(inspect("decode? #{msg}"))
-    GenServer.call(:client_protocol, {:decode, msg})
+    GenServer.call(@name, {:decode, msg})
   end
 
-  def encode(pieces) do
-    GenServer.call(:client_protocol, {:encode, pieces})
+  def encode(pid, pieces) do
+    GenServer.call(@name, {:encode, pieces})
   end
 
-  def handle_call({:decode, msg}, state) do
+  # callbacks
+
+  def handle_call({:decode, msg}, _from, state) do
     Logger.debug(inspect("decoding a message: #{msg}"))
     {:reply, msg, state}
   end
 
-  def handle_call({:encode, msg}, state) do
+  def handle_call({:encode, msg}, _from, state) do
     {:reply, msg, state}
   end
 end
