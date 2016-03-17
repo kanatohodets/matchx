@@ -5,7 +5,7 @@ defmodule Matchx.Matchbot.Client.Protocol do
   @name __MODULE__
   # public API
 
-  def start_link(name) do
+  def start_link() do
     Logger.debug("HERE COMES THE protocol")
     GenServer.start_link(__MODULE__, [], name: @name)
   end
@@ -15,18 +15,20 @@ defmodule Matchx.Matchbot.Client.Protocol do
     GenServer.call(@name, {:decode, msg})
   end
 
-  def encode(pid, pieces) do
-    GenServer.call(@name, {:encode, pieces})
+  def encode(command, args) do
+    GenServer.call(@name, {:encode, command, args})
   end
 
   # callbacks
 
   def handle_call({:decode, msg}, _from, state) do
     Logger.debug(inspect("decoding a message: #{msg}"))
-    {:reply, msg, state}
+    msg = String.rstrip(msg)
+    {:reply, {msg, []}, state}
   end
 
-  def handle_call({:encode, msg}, _from, state) do
-    {:reply, msg, state}
+  def handle_call({:encode, command, args}, _from, state) do
+    Logger.debug(inspect("encoding a message: #{command}"))
+    {:reply, "you said: " <> command, state}
   end
 end
