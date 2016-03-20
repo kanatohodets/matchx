@@ -35,7 +35,7 @@ defmodule Matchx.Matchbot.Client do
 
   def login(user, pass_hash) do
     Conn.write("LOGIN", [
-      user, pass_hash, "3200", "*", "Matchbox", "0", "sp cl p"
+      user, pass_hash, "3200", "*", "Matchbox 0.01", "0", "sp cl p"
     ])
   end
 
