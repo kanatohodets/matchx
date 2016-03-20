@@ -8,8 +8,11 @@ defmodule Matchx.Matchbot.Client.Connection do
 
   # public API
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, [], name: @name)
+  # not start link because this is started by the client, and we want to
+  # maintain the connection even if the client bombs
+  def start(server_address, server_port) do
+    Logger.debug("CONNECTION TIME #{inspect([server_address, server_port])}")
+    GenServer.start(__MODULE__, [server_address, server_port], name: @name)
   end
 
   def write(msg, args) do
@@ -19,10 +22,19 @@ defmodule Matchx.Matchbot.Client.Connection do
 
   # callbacks
 
-  def init(args) do
+  def init([server_address, server_port]) when is_list(server_address) do
     opts = [:binary, active: true, packet: :line]
-    {:ok, socket} = :gen_tcp.connect('localhost', 8500, opts)
-    {:ok, %{socket: socket, msg_id: 0}}
+    case :gen_tcp.connect(server_address, server_port, opts) do
+      {:ok, socket} ->
+        {:ok, %{socket: socket, msg_id: 0}}
+      {:error, error} ->
+        {:stop, error}
+    end
+  end
+
+  def init([server_address, server_port]) when is_binary(server_address) do
+    server = String.to_char_list(server_address)
+    init([server, server_port])
   end
 
   def handle_info({:tcp, socket, msg}, state) do
@@ -32,9 +44,15 @@ defmodule Matchx.Matchbot.Client.Connection do
     {:noreply, state}
   end
 
-  def handle_call({:write, command, args}, _from, %{socket: socket} = state) do
-    encoded = Protocol.encode(command, args)
-    :ok = :gen_tcp.send(socket, "#{state.msg_id} " <> encoded <> "\n")
-    {:reply, :ok, %{state | msg_id: state.msg_id + 1}}
+  def handle_info({:tcp_closed, port}, state) do
+    {:stop, {:shutdown, :tcp_closed}, state}
+  end
+
+
+  def handle_call({:write, command, args}, _from, %{socket: socket, msg_id: current_msg_id} = state) do
+    id = current_msg_id + 1
+    encoded = Protocol.encode(command, id, args)
+    :ok = :gen_tcp.send(socket, encoded)
+    {:reply, :ok, %{state | msg_id: id}}
   end
 end
